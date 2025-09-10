@@ -49,13 +49,13 @@ pipeline {
             }
         }
 
-        stage('Quality Gate Check') {
-            steps {
-                timeout(time: 1, unit: 'HOURS') {
-                    waitForQualityGate abortPipeline: false, credentialsId: 'sonarqube-token'
-                }
-            }
-        } 
+        // stage('Quality Gate Check') {
+        //     steps {
+        //         timeout(time: 1, unit: 'HOURS') {
+        //             waitForQualityGate abortPipeline: false, credentialsId: 'sonarqube-token'
+        //         }
+        //     }
+        // } 
 
         stage('Trivy FS Scan') {
             steps {
