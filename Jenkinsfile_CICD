@@ -31,11 +31,11 @@ pipeline {
                 }
             }
         }
-        
+                
         stage('GitLeaks Scan') {
             steps {
-                sh 'gitleaks detect --source ./client --exit-code 1'
-                sh 'gitleaks detect --source ./api --exit-code 1'
+                sh 'docker run --rm -v $(pwd):/repo zricethezav/gitleaks:latest detect --source ./client --exit-code 1'
+                sh 'docker run --rm -v $(pwd):/repo zricethezav/gitleaks:latest detect --source ./api --exit-code 1'
             }
         }
         
