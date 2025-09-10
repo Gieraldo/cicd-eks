@@ -52,7 +52,7 @@ pipeline {
         stage('Quality Gate Check') {
             steps {
                 timeout(time: 1, unit: 'HOURS') {
-                    waitForQualityGate abortPipeline: false, : 'sonarqube-token'
+                    waitForQualityGate abortPipeline: false, credentialsId: 'sonarqube-token'
                 }
             }
         } 
@@ -106,7 +106,7 @@ pipeline {
                         caCertificate: '',
                         clusterName: 'aldo-cluster',
                         contextName: '',
-                        credentialsId: 'k8s-jenkins-token',
+                        : 'k8s-jenkins-token',
                         namespace: 'prod',
                         restrictKubeConfigAccess: false,
                         serverUrl: 'https://FB4F0437152613F12E52893CD7FEDEA4.gr7.ap-southeast-2.eks.amazonaws.com'
@@ -131,7 +131,7 @@ pipeline {
                         caCertificate: '',
                         clusterName: 'aldo-cluster',
                         contextName: '',
-                        credentialsId: 'k8-prod-token',
+                        credentialsId: 'k8s-jenkins-token',
                         namespace: 'prod',
                         restrictKubeConfigAccess: false,
                         serverUrl: 'https://FB4F0437152613F12E52893CD7FEDEA4.gr7.ap-southeast-2.eks.amazonaws.com'
