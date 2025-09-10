@@ -70,17 +70,24 @@ pipeline {
                 timeout(time: Integer.parseInt(env.SONAR_QG_TIMEOUT_MIN), unit: 'MINUTES') {
                     // abortPipeline: true -> fail the pipeline if quality gate fails
                     // change to false if you want to continue even when quality gate fails
-                    waitForQualityGate abortPipeline: true, credentialsId: 'sonar-token'
+                    waitForQualityGate abortPipeline: true, credentialsId: 'sonarqube-token'
                 }
+            }
+        }
+
+        stage('Install Trivy') {
+            steps {
+                sh '''
+                curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
+                sudo mv ./trivy /usr/local/bin/
+                trivy --version
+                '''
             }
         }
 
         stage('Trivy FS Scan') {
             steps {
-                // Use trivy container, mount workspace to /repo, output report into workspace
-                sh '''
-                    docker run --rm -v ${REPO_DIR}:/repo:z aquasec/trivy:latest fs --format template --template "@/contrib/html.tpl" -o /repo/fs-report.html /repo || true
-                '''
+                sh 'trivy fs --format table -o fs-report.html .'
             }
         }
 
