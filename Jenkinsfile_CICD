@@ -66,7 +66,7 @@ pipeline {
         stage('Build-Tag & Push Backend Docker Image') {
             steps {
                 script {
-                    withDockerRegistry(: 'docker-cred') {
+                    withDockerRegistry(credentialsId: 'docker-cred') {
                         dir('api') {
                             sh 'docker build -t in30minthing/backend:latest .'
                             sh 'trivy image --format table -o backend-image-report.html in30minthing/backend:latest'
@@ -80,7 +80,7 @@ pipeline {
         stage('Build-Tag & Push Frontend Docker Image') {
             steps {
                 script {
-                    withDockerRegistry(: 'docker-cred') {
+                    withDockerRegistry(credentialsId: 'docker-cred') {
                         dir('client') {
                             sh 'docker build -t in30minthing/frontend:latest .'
                             sh 'trivy image --format table -o frontend-image-report.html in30minthing/frontend:latest'
@@ -106,7 +106,7 @@ pipeline {
                         caCertificate: '',
                         clusterName: 'aldo-cluster',
                         contextName: '',
-                        : 'k8s-jenkins-token',
+                        credentialsId: 'k8s-jenkins-token',
                         namespace: 'prod',
                         restrictKubeConfigAccess: false,
                         serverUrl: 'https://FB4F0437152613F12E52893CD7FEDEA4.gr7.ap-southeast-2.eks.amazonaws.com'
