@@ -13,11 +13,6 @@ pipeline {
         SONAR_QG_TIMEOUT_MIN = "5"
     }
 
-    options {
-        // cleanup workspace jika perlu: uncomment jika mau
-        // skipDefaultCheckout()
-    }
-
     stages {
         stage('Git Checkout') {
             steps {
