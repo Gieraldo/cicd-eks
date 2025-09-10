@@ -52,10 +52,10 @@ pipeline {
         stage('Quality Gate Check') {
             steps {
                 timeout(time: 1, unit: 'HOURS') {
-                    waitForQualityGate abortPipeline: false, credentialsId: 'sonarqube-token'
+                    waitForQualityGate abortPipeline: false, : 'sonarqube-token'
                 }
             }
-        }
+        } 
 
         stage('Trivy FS Scan') {
             steps {
@@ -66,7 +66,7 @@ pipeline {
         stage('Build-Tag & Push Backend Docker Image') {
             steps {
                 script {
-                    withDockerRegistry(credentialsId: 'docker-cred') {
+                    withDockerRegistry(: 'docker-cred') {
                         dir('api') {
                             sh 'docker build -t in30minthing/backend:latest .'
                             sh 'trivy image --format table -o backend-image-report.html in30minthing/backend:latest'
@@ -80,7 +80,7 @@ pipeline {
         stage('Build-Tag & Push Frontend Docker Image') {
             steps {
                 script {
-                    withDockerRegistry(credentialsId: 'docker-cred') {
+                    withDockerRegistry(: 'docker-cred') {
                         dir('client') {
                             sh 'docker build -t in30minthing/frontend:latest .'
                             sh 'trivy image --format table -o frontend-image-report.html in30minthing/frontend:latest'
@@ -106,7 +106,7 @@ pipeline {
                         caCertificate: '',
                         clusterName: 'aldo-cluster',
                         contextName: '',
-                        credentialsId: 'k8-prod-token',
+                        credentialsId: 'k8s-jenkins-token',
                         namespace: 'prod',
                         restrictKubeConfigAccess: false,
                         serverUrl: 'https://FB4F0437152613F12E52893CD7FEDEA4.gr7.ap-southeast-2.eks.amazonaws.com'
