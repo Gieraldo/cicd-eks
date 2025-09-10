@@ -52,7 +52,7 @@ pipeline {
         stage('Quality Gate Check') {
             steps {
                 timeout(time: 1, unit: 'HOURS') {
-                    waitForQualityGate abortPipeline: false, credentialsId: 'sonar-token'
+                    waitForQualityGate abortPipeline: false, credentialsId: 'sonarqube-token'
                 }
             }
         }
@@ -109,7 +109,7 @@ pipeline {
                         credentialsId: 'k8-prod-token',
                         namespace: 'prod',
                         restrictKubeConfigAccess: false,
-                        serverUrl: 'https://B39FD5B47A9E5ABA09219750FAC96312.yl4.eu-north-1.eks.amazonaws.com'
+                        serverUrl: 'https://FB4F0437152613F12E52893CD7FEDEA4.gr7.ap-southeast-2.eks.amazonaws.com'
                     ) {
                         sh 'kubectl apply -f k8s-prod/sc.yaml'
                         sleep 20
@@ -134,7 +134,7 @@ pipeline {
                         credentialsId: 'k8-prod-token',
                         namespace: 'prod',
                         restrictKubeConfigAccess: false,
-                        serverUrl: 'https://B39FD5B47A9E5ABA09219750FAC96312.yl4.eu-north-1.eks.amazonaws.com'
+                        serverUrl: 'https://FB4F0437152613F12E52893CD7FEDEA4.gr7.ap-southeast-2.eks.amazonaws.com'
                     ) {
                         sh 'kubectl get pods -n prod'
                         sleep 20
