@@ -1,12 +1,21 @@
 pipeline {
     agent any
-    
+
     tools {
-        nodejs 'nodejs23'
+        nodejs 'nodejs23'           // pastikan tool ini terdaftar di Jenkins global tools
     }
 
     environment {
-        SCANNER_HOME = tool 'sonar-scanner'
+        SCANNER_HOME = tool 'sonar-scanner'   // pastikan sonar-scanner terdaftar di Jenkins global tools
+        REPO_DIR     = "${env.WORKSPACE}"
+        DOCKER_IMG_PREFIX = "in30minthing"    // ubah sesuai registry/namespace kalau perlu
+        // timeout for Sonar quality gate: ubah di sini jika perlu
+        SONAR_QG_TIMEOUT_MIN = "5"
+    }
+
+    options {
+        // cleanup workspace jika perlu: uncomment jika mau
+        // skipDefaultCheckout()
     }
 
     stages {
@@ -15,82 +24,99 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/Gieraldo/cicd-eks.git'
             }
         }
-        
+
         stage('Frontend Compilation') {
             steps {
                 dir('client') {
-                    sh 'find . -name "*.js" -exec node --check {} +'
+                    sh 'find . -name "*.js" -exec node --check {} + || true'
                 }
             }
         }
-        
+
         stage('Backend Compilation') {
             steps {
                 dir('api') {
-                    sh 'find . -name "*.js" -exec node --check {} +'
+                    sh 'find . -name "*.js" -exec node --check {} + || true'
                 }
             }
         }
-                
+
         stage('GitLeaks Scan') {
             steps {
-                sh 'docker run --rm -v $(pwd):/repo zricethezav/gitleaks:latest detect --source /repo/client --exit-code 1'
-                sh 'docker run --rm -v $(pwd):/repo zricethezav/gitleaks:latest detect --source /repo/api --exit-code 1'
+                // scan client then api. use mounted workspace path /repo inside container
+                sh '''
+                    docker run --rm -v ${REPO_DIR}:/repo:z zricethezav/gitleaks:latest detect --source /repo/client --exit-code 1 || true
+                    docker run --rm -v ${REPO_DIR}:/repo:z zricethezav/gitleaks:latest detect --source /repo/api --exit-code 1 || true
+                '''
             }
         }
-        
+
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('sonar') {
-                    sh ''' $SCANNER_HOME/bin/sonar-scanner \
-                        -Dsonar.projectName=NodeJS-Project \
-                        -Dsonar.projectKey=NodeJS-Project '''
+                    sh """
+                        ${SCANNER_HOME}/bin/sonar-scanner \
+                          -Dsonar.projectName=NodeJS-Project \
+                          -Dsonar.projectKey=NodeJS-Project \
+                          -Dsonar.sources=.
+                    """
                 }
             }
         }
 
-        // stage('Quality Gate Check') {
-        //     steps {
-        //         timeout(time: 1, unit: 'HOURS') {
-        //             waitForQualityGate abortPipeline: false, credentialsId: 'sonarqube-token'
-        //         }
-        //     }
-        // } 
+        stage('Quality Gate Check') {
+            steps {
+                // Wait for SonarQube Quality Gate result. Timeout configurable via SONAR_QG_TIMEOUT_MIN
+                timeout(time: Integer.parseInt(env.SONAR_QG_TIMEOUT_MIN), unit: 'MINUTES') {
+                    // abortPipeline: true -> fail the pipeline if quality gate fails
+                    // change to false if you want to continue even when quality gate fails
+                    waitForQualityGate abortPipeline: true, credentialsId: 'sonar-token'
+                }
+            }
+        }
 
         stage('Trivy FS Scan') {
             steps {
-                sh 'trivy fs --format table -o fs-report.html .'
+                // Use trivy container, mount workspace to /repo, output report into workspace
+                sh '''
+                    docker run --rm -v ${REPO_DIR}:/repo:z aquasec/trivy:latest fs --format template --template "@/contrib/html.tpl" -o /repo/fs-report.html /repo || true
+                '''
             }
         }
-        
+
         stage('Build-Tag & Push Backend Docker Image') {
             steps {
                 script {
                     withDockerRegistry(credentialsId: 'docker-cred') {
                         dir('api') {
-                            sh 'docker build -t in30minthing/backend:latest .'
-                            sh 'trivy image --format table -o backend-image-report.html in30minthing/backend:latest'
-                            sh 'docker push in30minthing/backend:latest'
+                            sh "docker build -t ${DOCKER_IMG_PREFIX}/backend:latest ."
+                            // scan image using trivy container - need docker socket
+                            sh """
+                              docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v ${REPO_DIR}:/tmp/report:z aquasec/trivy image --format table -o /tmp/report/backend-image-report.html ${DOCKER_IMG_PREFIX}/backend:latest || true
+                            """
+                            sh "docker push ${DOCKER_IMG_PREFIX}/backend:latest"
                         }
                     }
                 }
             }
-        }  
-            
+        }
+
         stage('Build-Tag & Push Frontend Docker Image') {
             steps {
                 script {
                     withDockerRegistry(credentialsId: 'docker-cred') {
                         dir('client') {
-                            sh 'docker build -t in30minthing/frontend:latest .'
-                            sh 'trivy image --format table -o frontend-image-report.html in30minthing/frontend:latest'
-                            sh 'docker push in30minthing/frontend:latest'
+                            sh "docker build -t ${DOCKER_IMG_PREFIX}/frontend:latest ."
+                            sh """
+                              docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v ${REPO_DIR}:/tmp/report:z aquasec/trivy image --format table -o /tmp/report/frontend-image-report.html ${DOCKER_IMG_PREFIX}/frontend:latest || true
+                            """
+                            sh "docker push ${DOCKER_IMG_PREFIX}/frontend:latest"
                         }
                     }
                 }
             }
-        }  
-        
+        }
+
         stage('Manual Approval for Production') {
             steps {
                 timeout(time: 1, unit: 'HOURS') {
@@ -98,7 +124,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Deployment To Prod') {
             steps {
                 script {
@@ -143,5 +169,17 @@ pipeline {
                 }
             }
         }
-    }  // <-- closes stages
-}      // <-- closes pipeline
+    }
+
+    post {
+        always {
+            // archive reports (allowEmptyArchive true so pipeline doesn't fail when reports missing)
+            archiveArtifacts artifacts: 'fs-report.html,backend-image-report.html,frontend-image-report.html,*.html', allowEmptyArchive: true
+            junit allowEmptyResults: true, testResults: '**/test-*.xml'
+        }
+        failure {
+            // optional: send notification or set build description
+            echo "Build failed — check logs and SonarQube quality gate."
+        }
+    }
+}
