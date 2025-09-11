@@ -118,15 +118,17 @@ pipeline {
         stage('Deployment To Prod') {
             steps {
                 script {
-                    withKubeConfig([credentialsId: 'kubeconfig-prod']) {
-                        sh 'kubectl apply -f k8s-prod/sc.yaml'
-                        sleep 20
-                        sh 'kubectl apply -f k8s-prod/mysql.yaml -n prod'
-                        sh 'kubectl apply -f k8s-prod/backend.yaml -n prod'
-                        sh 'kubectl apply -f k8s-prod/frontend.yaml -n prod'
-                        sh 'kubectl apply -f k8s-prod/ci.yaml'
-                        sh 'kubectl apply -f k8s-prod/ingress.yaml -n prod'
-                        sleep 30
+                    docker.image('bitnami/kubectl:latest').inside {
+                        withKubeConfig([credentialsId: 'kubeconfig-prod']) {
+                            sh 'kubectl apply -f k8s-prod/sc.yaml'
+                            sleep 20
+                            sh 'kubectl apply -f k8s-prod/mysql.yaml -n prod'
+                            sh 'kubectl apply -f k8s-prod/backend.yaml -n prod'
+                            sh 'kubectl apply -f k8s-prod/frontend.yaml -n prod'
+                            sh 'kubectl apply -f k8s-prod/ci.yaml'
+                            sh 'kubectl apply -f k8s-prod/ingress.yaml -n prod'
+                            sleep 30
+                        }
                     }
                 }
             }
@@ -135,10 +137,12 @@ pipeline {
         stage('Verify Deployment To Prod') {
             steps {
                 script {
-                    withKubeConfig([credentialsId: 'kubeconfig-prod']) {
-                        sh 'kubectl get pods -n prod'
-                        sleep 20
-                        sh 'kubectl get ingress -n prod'
+                    docker.image('bitnami/kubectl:latest').inside {
+                        withKubeConfig([credentialsId: 'kubeconfig-prod']) {
+                            sh 'kubectl get pods -n prod'
+                            sleep 20
+                            sh 'kubectl get ingress -n prod'
+                        }
                     }
                 }
             }

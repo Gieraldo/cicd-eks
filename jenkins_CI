@@ -72,11 +72,11 @@ pipeline {
        stage('Build Tag & push backend DockerImage') {
     steps {
         script {
-            withDockerRegistry(credentialsId: 'in30minthing') {
+            withDockerRegistry(credentialsId: 'gieraldo21') {
                 dir('api') {
-                    sh 'docker build -t in30minthing/backend:latest .'
-                    sh 'trivy image --format table -o backend-image-report.html in30minthing/backend:latest'
-                    sh 'docker push in30minthing/backend:latest'
+                    sh 'docker build -t gieraldo21/backend:latest .'
+                    sh 'trivy image --format table -o backend-image-report.html gieraldo21/backend:latest'
+                    sh 'docker push gieraldo21/backend:latest'
                 }
             }
         }
@@ -86,11 +86,11 @@ pipeline {
         stage('Build Tag & push frontend DockerImage') {
     steps {
         script {
-            withDockerRegistry(credentialsId: 'in30minthing') {
+            withDockerRegistry(credentialsId: 'gieraldo21') {
                 dir('client') {
-                    sh 'docker build -t in30minthing/frontend:latest .'
-                    sh 'trivy image --format table -o frontend-image-report.html in30minthing/frontend:latest'
-                    sh 'docker push in30minthing/frontend:latest'
+                    sh 'docker build -t gieraldo21/frontend:latest .'
+                    sh 'trivy image --format table -o frontend-image-report.html gieraldo21/frontend:latest'
+                    sh 'docker push gieraldo21/frontend:latest'
                 }
             }
         }

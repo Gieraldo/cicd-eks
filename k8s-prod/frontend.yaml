@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: in30minthing/frontend:latest
+          image: gieraldo21/frontend:latest
           ports:
             - containerPort: 80
 ---
