@@ -65,19 +65,11 @@ pipeline {
             }
         }
 
-        stage('Install Trivy') {
-            steps {
-                sh '''
-                curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
-                sudo mv ./trivy /usr/local/bin/
-                trivy --version
-                '''
-            }
-        }
-
         stage('Trivy FS Scan') {
             steps {
-                sh 'trivy fs --format table -o fs-report.html .'
+                sh """
+                docker run --rm -v ${REPO_DIR}:/repo aquasec/trivy fs --format table -o /repo/fs-report.html /repo
+                """
             }
         }
 
@@ -87,9 +79,8 @@ pipeline {
                     withDockerRegistry(credentialsId: 'docker-cred') {
                         dir('api') {
                             sh "docker build -t ${DOCKER_IMG_PREFIX}/backend:latest ."
-                            // scan image using trivy container - need docker socket
                             sh """
-                              docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v ${REPO_DIR}:/tmp/report:z aquasec/trivy image --format table -o /tmp/report/backend-image-report.html ${DOCKER_IMG_PREFIX}/backend:latest || true
+                            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v ${REPO_DIR}:/tmp/report aquasec/trivy image --format table -o /tmp/report/backend-image-report.html ${DOCKER_IMG_PREFIX}/backend:latest
                             """
                             sh "docker push ${DOCKER_IMG_PREFIX}/backend:latest"
                         }
