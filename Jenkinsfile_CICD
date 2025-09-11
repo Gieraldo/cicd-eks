@@ -8,7 +8,7 @@ pipeline {
     environment {
         SCANNER_HOME = tool 'sonar-scanner'   // pastikan sonar-scanner terdaftar di Jenkins global tools
         REPO_DIR     = "${env.WORKSPACE}"
-        DOCKER_IMG_PREFIX = "in30minthing"    // namespace akun Docker Hub kamu
+        DOCKER_IMG_PREFIX = "gieraldo21"    // namespace akun Docker Hub kamu
         SONAR_QG_TIMEOUT_MIN = "5"
     }
 
