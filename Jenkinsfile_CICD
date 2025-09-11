@@ -117,33 +117,22 @@ pipeline {
 
         stage('Deployment To Prod') {
             steps {
-                script {
-                    docker.image('bitnami/kubectl:latest').inside {
-                        withKubeConfig([credentialsId: 'kubeconfig-prod']) {
-                            sh 'kubectl apply -f k8s-prod/sc.yaml'
-                            sleep 20
-                            sh 'kubectl apply -f k8s-prod/mysql.yaml -n prod'
-                            sh 'kubectl apply -f k8s-prod/backend.yaml -n prod'
-                            sh 'kubectl apply -f k8s-prod/frontend.yaml -n prod'
-                            sh 'kubectl apply -f k8s-prod/ci.yaml'
-                            sh 'kubectl apply -f k8s-prod/ingress.yaml -n prod'
-                            sleep 30
-                        }
-                    }
+                withKubeConfig([credentialsId: 'kubeconfig-prod']) {
+                    kubernetesDeploy(configs: 'k8s-prod/sc.yaml', kubeconfigId: 'kubeconfig-prod')
+                    kubernetesDeploy(configs: 'k8s-prod/mysql.yaml', kubeconfigId: 'kubeconfig-prod', namespace: 'prod')
+                    kubernetesDeploy(configs: 'k8s-prod/backend.yaml', kubeconfigId: 'kubeconfig-prod', namespace: 'prod')
+                    kubernetesDeploy(configs: 'k8s-prod/frontend.yaml', kubeconfigId: 'kubeconfig-prod', namespace: 'prod')
+                    kubernetesDeploy(configs: 'k8s-prod/ci.yaml', kubeconfigId: 'kubeconfig-prod')
+                    kubernetesDeploy(configs: 'k8s-prod/ingress.yaml', kubeconfigId: 'kubeconfig-prod', namespace: 'prod')
                 }
             }
         }
 
         stage('Verify Deployment To Prod') {
             steps {
-                script {
-                    docker.image('bitnami/kubectl:latest').inside {
-                        withKubeConfig([credentialsId: 'kubeconfig-prod']) {
-                            sh 'kubectl get pods -n prod'
-                            sleep 20
-                            sh 'kubectl get ingress -n prod'
-                        }
-                    }
+                withKubeConfig([credentialsId: 'kubeconfig-prod']) {
+                    kubernetesGet(resourceType: 'pods', namespace: 'prod')
+                    kubernetesGet(resourceType: 'ingress', namespace: 'prod')
                 }
             }
         }
