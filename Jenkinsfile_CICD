@@ -157,7 +157,7 @@ pipeline {
                         sh 'kubectl get ingress -n prod'
                     }
                 }
-            }
+            } 
         }
     }
 
