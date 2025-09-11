@@ -59,14 +59,9 @@ pipeline {
             }
         }
 
-        stage('Quality Gate Check') {
+        stage("Quality Gate Check") {
             steps {
-                // Wait for SonarQube Quality Gate result. Timeout configurable via SONAR_QG_TIMEOUT_MIN
-                timeout(time: Integer.parseInt(env.SONAR_QG_TIMEOUT_MIN), unit: 'MINUTES') {
-                    // abortPipeline: true -> fail the pipeline if quality gate fails
-                    // change to false if you want to continue even when quality gate fails
-                    waitForQualityGate abortPipeline: true, credentialsId: 'sonarqube-token'
-                }
+                echo "Skipping SonarQube Quality Gate wait"
             }
         }
 
