@@ -120,12 +120,31 @@ pipeline {
                 withKubeConfig([credentialsId: 'kubeconfig-prod']) {
                     sh 'kubectl apply -f k8s-prod/sc.yaml'
                     sleep 20
-                    sh 'kubectl apply -f k8s-prod/mysql.yaml -n prod'
                     sh 'kubectl apply -f k8s-prod/backend.yaml -n prod'
                     sh 'kubectl apply -f k8s-prod/frontend.yaml -n prod'
                     sh 'kubectl apply -f k8s-prod/ci.yaml'
                     sh 'kubectl apply -f k8s-prod/ingress.yaml -n prod'
                     sleep 30
+                }
+            }
+        }
+
+        stage('Deploy MySQL StatefulSet') {
+            steps {
+                withKubeConfig([credentialsId: 'kubeconfig-prod']) {
+                    script {
+                        sh """
+                        set +e
+                        kubectl apply -f k8s-prod/mysql.yaml -n prod
+                        if [ \$? -ne 0 ]; then
+                          echo "MySQL StatefulSet apply failed, retrying with delete + apply..."
+                          kubectl delete -f k8s-prod/mysql.yaml -n prod --ignore-not-found=true
+                          sleep 10
+                          kubectl apply -f k8s-prod/mysql.yaml -n prod
+                        fi
+                        set -e
+                        """
+                    }
                 }
             }
         }
