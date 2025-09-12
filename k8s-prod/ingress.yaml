@@ -10,7 +10,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: mydevopsprojects.net
+    - host: apps.sandbox668.opentlc.com
       http:
         paths:
           - path: /api
@@ -27,7 +27,7 @@ spec:
                 name: frontend-svc
                 port:
                   number: 80
-    - host: www.mydevopsprojects.net
+    - host: apps.sandbox668.opentlc.com
       http:
         paths:
           - path: /api
@@ -46,6 +46,5 @@ spec:
                   number: 80
   tls:
     - hosts:
-        - mydevopsprojects.net
-        - www.mydevopsprojects.net
-      secretName: mydevopsprojects-net-tls
+        - apps.sandbox668.opentlc.com
+      secretName: apps.sandbox668.opentlc.com-tls
