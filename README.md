@@ -90,3 +90,6 @@ This project includes a **Jenkins pipeline** to automate CI/CD deployment to **A
    Before deploying to production, Jenkins prompts for manual approval.
 
 ---
+
+### References
+https://medium.com/@khushboo.sah067/devsecops-megaproject-series-three-tier-project-deployment-application-66816ae1e2f5 
